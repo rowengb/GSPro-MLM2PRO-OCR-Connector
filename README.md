@@ -1,5 +1,5 @@
 # GSPro-MLM2PRO-OCR
-An OpenCV interface to use the Rapsodo MLM2PRO with the golf simulation software GSPro.
+A Python script that interfaces the Rapsodo MLM2PRO golf launch monitor with the GSPro golf simulation software using OpenCV and Tesseract OCR.
 
 Required Apps:
 
