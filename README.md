@@ -1,10 +1,11 @@
 # GSPro-MLM2PRO-OCR
 A Python script that interfaces the Rapsodo MLM2PRO golf launch monitor with the GSPro golf simulation software using OpenCV and Tesseract OCR.
 
-Required Apps:
+Required:
 
 - AirPlay app from Windows Store - https://www.microsoft.com/store/productId/9P6QSQ5PH9KR
 - Rapsodo MLM2PRO app on iPhone - https://apps.apple.com/us/app/rapsodo-mlm2pro/id1659665092
+- Callaway® RPT™ Chrome Soft X® Golf Balls (3 Included in MLM2PRO box), these are necessary as we need to calculate Spin Axis and Spin Rate - https://rapsodo.com/products/callaway-rpt-chrome-soft-x-golf-balls
 
 Steps:
 
