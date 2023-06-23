@@ -15,6 +15,6 @@ Steps:
 4. Adjust the AirPlay window size so that the Rapsodo MLM2Pro App fills it out completely with no black borders/bars (Example: https://ibb.co/DMHx12S)
 5. Minimize the AirPlay application window
 6. Open GSPRO and GSPRO Connect Open API window
-7. Either Run the PY script in CMD (you will need to have all necessary modules installed) or download the ZIP from v0.1.0 and run the MLM2PROConnector.exe file (https://github.com/rowengb/GSPro-MLM2PRO-OCR/releases/tag/v0.1.0)
+7. Either Run the PY script in CMD (you will need to have all necessary modules installed) or download the ZIP from v0.2.0 and run the MLM2PROConnector.exe file (https://github.com/rowengb/GSPro-MLM2PRO-OCR/releases/tag/v0.2.0)
 8. Take your first shot, wait for the numbers to populate on the iPhone app and then press the Enter key
 9. Done
