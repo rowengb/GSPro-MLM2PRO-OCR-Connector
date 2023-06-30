@@ -1,0 +1,8 @@
+{
+  "HOST": "127.0.0.1", // OpenAPI IP (Leave as is)
+  "PORT": 921, // OpenAPI Port (Leave as is)
+  "WINDOW_NAME": "EasyCast", // Enter either AirPlay (iOS) or EasyCast (Android)
+  "TARGET_WIDTH": 1638, // Target Width for Screenshot Resizing (Leave as is)
+  "TARGET_HEIGHT": 752, // Target Height for Screenshot Resizing (Leave as is)
+  "METRIC": "Yards" // Enter either Yards or Meters (will also need to be changed in GSPro & Rapsodo MLM2PRO app)
+}
