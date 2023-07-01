@@ -24,6 +24,6 @@ Steps:
 6. Adjust the AirPlay/EasyCast window size so that the Rapsodo MLM2Pro App fills it out with little to no black borders/bars (Doesn't have to be perfect, the connector app will still work with black borders/bars but may not be as accurate) - (Example: https://ibb.co/DMHx12S).
 7. Minimize the AirPlay/EasyCast application window (Important!).
 8. Open GSPRO and GSPRO Connect Open API window (Go to Range or Local Match).
-10. Run the MLM2PROConnectorV1.exe app file (located in the previously downloaded/unziped ZIP file) and wait for the "Press enter after you've hit your first shot" line to show.
+10. Run the MLM2PROConnectorV1.exe app file as ADMINISTRATOR (located in the previously downloaded/unziped ZIP file) and wait for the "Press enter after you've hit your first shot" line to show.
 11. Take your first shot, wait for the numbers to populate on the Rapsodo Range in the MLM2PRO app and then press the Enter key.
 12. Done!
