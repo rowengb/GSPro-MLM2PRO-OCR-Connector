@@ -27,3 +27,5 @@ Steps:
 10. Run the MLM2PROConnectorV1.exe app file as ADMINISTRATOR (located in the previously downloaded/unziped ZIP file) and wait for the "Press enter after you've hit your first shot" line to show.
 11. Take your first shot, wait for the numbers to populate on the Rapsodo Range in the MLM2PRO app and then press the Enter key.
 12. Done!
+
+NOTE: Make sure to have GSPro, GSPro Connect and the AirPlay receiver app open and running before opening the MLM2PROConnectorV1.exe app otherwise it will just close instantly after pressing enter to confirm your first shot.
