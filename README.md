@@ -17,7 +17,7 @@ Required:
 Steps:
 
 1. Download the ZIP from v1.0, unzip it, and open the Settings.json file (https://github.com/rowengb/GSPro-MLM2PRO-OCR/releases/tag/v1.0).
-2. By default, the WINDOW_NAME is set to "AirPlay" (for iPhone), if you are using Android, change it to "EasyCast". You can also change the METRIC from "Yards" to "Meters" (Note: the metric will also need to be changed in GSPro & Rapsodo MLM2PRO app). Once done, save the file (Ctrl+S) and close it.
+2. By default, the WINDOW_NAME is set to "AirPlay" (for iPhone), if you are using Android, change it to "EasyCast". Once done, save the file (Ctrl+S) and close it.
 3. Open the Rapsodo MLM2PRO phone app, connect your Launch Monitor, and go to Simulation > Rapsodo Range.
 4. Click on the little arrow next to "Ball Speed" on the right to show all the metrics.
 5. Mirror your phone screen to the AirPlay/EasyCast windows app (Depending on your phone OS).
