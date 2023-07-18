@@ -198,14 +198,15 @@ def main():
 
             time.sleep(1)
     except Exception as e:
-        print_colored_prefix(Color.RED, "MLM2PRO Connector ||","An error occurred: ", e)
+        print_colored_prefix(Color.RED, "MLM2PRO Connector ||","An error occurred: {}".format(e))
 
     finally:
         if api is not None:
             api.End()
             print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Tesseract API ended...")
-        sock.close()
-        print_colored_prefix(Color.RED, "GSPro ||", "Socket connection closed...")
+        if 'sock' in locals():
+            sock.close()
+            print_colored_prefix(Color.RED, "GSPro ||", "Socket connection closed...")
 
 if __name__ == "__main__":
     plt.ion()  # Turn interactive mode on.
