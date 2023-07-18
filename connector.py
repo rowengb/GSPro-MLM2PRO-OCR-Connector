@@ -112,7 +112,7 @@ def main():
         future_screenshot = executor.submit(capture_window, WINDOW_NAME, TARGET_WIDTH, TARGET_HEIGHT)
         screenshot = future_screenshot.result()
 
-        values = ["Ball Speed", "Spin Rate", "Spin Axis", "Launch Direction (VLA)", "Launch Angle (HLA)", "Club Speed"]
+        values = ["Ball Speed", "Spin Rate", "Spin Axis", "Launch Direction (HLA)", "Launch Angle (VLA)", "Club Speed"]
 
         # Ask user to select ROIs for each value, if they weren't found in the json
         if len(rois) == 0 :
