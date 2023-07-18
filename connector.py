@@ -124,7 +124,8 @@ def main():
                 vla = float(vla)
                 club_speed = float(club_speed)
 
-                if ball_speed == 0.0 or spin_axis == 0.0 or total_spin == 0.0 or hla == 0.0 or vla == 0.0 or club_speed == 0.0:
+                # HLA and spin axis could well be 0.0
+                if ball_speed == 0.0 or total_spin == 0.0 or vla == 0.0 or club_speed == 0.0:
                     raise ValueError("A value is 0")
 
                 incomplete_data_displayed = False
