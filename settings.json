@@ -1,8 +1,18 @@
 {
   "HOST": "127.0.0.1", // OpenAPI IP (Leave as is)
   "PORT": 921, // OpenAPI Port (Leave as is)
+
   "WINDOW_NAME": "AirPlay", // Enter either AirPlay (iOS) or EasyCast (Android)
-  "TARGET_WIDTH": 1597, // Enter "1597" for iPad or "1638" for iPhone/Android
-  "TARGET_HEIGHT": 1198, // Enter "1198" for iPad or "752" for iPhone/Android
+  "TARGET_WIDTH": 1638, // Enter "1597" for iPad or "1638" for iPhone/Android
+  "TARGET_HEIGHT": 752, // Enter "1198" for iPad or "752" for iPhone/Android
+
+  //upper left quadrant of windows, 1080p airplay on iPhone6
+  "ROI1" : " 136 , 367 , 87 , 56 ",  // Ball Speed
+  "ROI2" : " 640 , 272 , 110 , 53 ", // Spin Rate
+  "ROI3" : " 642 , 371 , 93 , 52 ",  // Spin Axis
+  "ROI4" : " 466 , 272 , 105 , 55 ", // Launch Direction (VLA)
+  "ROI5" : " 126 , 464 , 107 , 56 ", // Launch Angle (HLA)
+  "ROI6" : " 304 , 371 , 87 , 54 ",  // Club Speed
+
   "METRIC": "Yards" // (Leave as is) - If you want metric instead of imperial, change it in GSPro itself
 }
