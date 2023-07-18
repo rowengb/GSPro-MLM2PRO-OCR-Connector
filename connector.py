@@ -32,13 +32,30 @@ def load_settings():
     return settings
 
 settings = load_settings()
-HOST = settings["HOST"]
-PORT = settings["PORT"]
-WINDOW_NAME = settings["WINDOW_NAME"]
-TARGET_WIDTH = settings["TARGET_WIDTH"]
-TARGET_HEIGHT = settings["TARGET_HEIGHT"]
-METRIC = settings["METRIC"]
+HOST = settings.get("HOST")
+PORT = settings.get("PORT")
+WINDOW_NAME = settings.get("WINDOW_NAME")
+TARGET_WIDTH = settings.get("TARGET_WIDTH")
+TARGET_HEIGHT = settings.get("TARGET_HEIGHT")
+METRIC = settings.get("METRIC")
 
+rois = []
+# Fill rois array from the json.  If ROI1 is present, assume they all are
+if settings.get("ROI1") :
+    rois.append(list(map(int,settings.get("ROI1").split(','))))
+    rois.append(list(map(int,settings.get("ROI2").split(','))))
+    rois.append(list(map(int,settings.get("ROI3").split(','))))
+    rois.append(list(map(int,settings.get("ROI4").split(','))))
+    rois.append(list(map(int,settings.get("ROI5").split(','))))
+    rois.append(list(map(int,settings.get("ROI6").split(','))))
+ 
+if not PORT:
+    PORT=921
+if not HOST:
+    HOST="127.0.0.1"
+if not METRIC:
+    METRIC="Yards"
+    
 class Color:
     RESET = '\033[0m'
     RED = '\033[91m'
@@ -95,13 +112,21 @@ def main():
         future_screenshot = executor.submit(capture_window, WINDOW_NAME, TARGET_WIDTH, TARGET_HEIGHT)
         screenshot = future_screenshot.result()
 
-        # Ask user to select ROIs for each value
-        rois = []
         values = ["Ball Speed", "Spin Rate", "Spin Axis", "Launch Direction (VLA)", "Launch Angle (HLA)", "Club Speed"]
-        for value in values:
-            print(f"Please select the ROI for {value}.")
-            roi = select_roi(screenshot)
-            rois.append(roi)
+
+        # Ask user to select ROIs for each value, if they weren't found in the json
+        if len(rois) == 0 :
+            for value in values:
+                print(f"Please select the ROI for {value}.")
+                roi = select_roi(screenshot)
+                rois.append(roi)
+            print("You can paste these 6 lines into JSON")
+            i = 1
+            for roi in rois:
+                print(f" \"ROI{i}\" : \"", roi[0],",",roi[1],",",roi[2],",",roi[3],"\",",end='')
+                print(f"\t// {values[i-1]}")
+                i=i+1
+            print()
 
         while True:
             # Run capture_window function in a separate thread
