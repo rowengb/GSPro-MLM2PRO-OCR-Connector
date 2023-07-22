@@ -6,18 +6,26 @@ import win32gui
 import win32ui
 import matplotlib.pyplot as plt
 
+w = -1
+h = -1
 
 def capture_window(window_name: str, target_width: int, target_height: int) -> np.array:
+    global w, h
     windll.user32.SetProcessDPIAware()
     hwnd = win32gui.FindWindow(None, window_name)
+    if not hwnd:
+        raise RuntimeError(f"Can't find window called '{window_name}'")
+    
+    rect = win32gui.GetClientRect(hwnd)
+    if w == -1 :
+        w = rect[2] - rect[0]
+        h = rect[3] - rect[1]
+    else :
+        if not (w == rect[2] - rect[0] and h == rect[3] - rect[0]) :
+            raise RuntimeError(f"Target window ({window_name}) size has changed to {w}x{h} {rect}")
 
-    rect = win32gui.GetClientRect(hwnd) 
-    w = rect[2] - rect[0]
-    h = rect[3] - rect[1]
-
-    rect_pos = win32gui.GetWindowRect(hwnd)
-    left = rect_pos[0]
-    top = rect_pos[1]
+    if not (w==target_width and h==target_height) :
+        print(f"dimensions seem wrong {w}x{h} vs json:{target_width}x{target_height}")
 
     hwnd_dc = win32gui.GetWindowDC(hwnd)
     mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
