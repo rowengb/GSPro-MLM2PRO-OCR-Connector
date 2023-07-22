@@ -12,6 +12,14 @@ from PIL import Image
 from datetime import datetime
 import cv2
 from matplotlib import pyplot as plt
+import platform
+import random
+
+class TestModes :
+    none = 0
+    auto_shot = 1 # allows debugging without having to hit shots
+    
+test_mode = TestModes.none
 
 # Set the path to the Tesseract OCR executable and library
 tesseract_path = os.path.join(os.getcwd(), 'Tesseract-OCR')
@@ -48,6 +56,7 @@ if settings.get("ROI1") :
     rois.append(list(map(int,settings.get("ROI4").split(','))))
     rois.append(list(map(int,settings.get("ROI5").split(','))))
     rois.append(list(map(int,settings.get("ROI6").split(','))))
+    print("Imported ROIs from JSON")
  
 if not PORT:
     PORT=921
@@ -65,7 +74,10 @@ class Color:
     BLUE = '\033[94m'
 
 def print_colored_prefix(color, prefix, message):
-    print(f"{color}{prefix}{Color.RESET}", message)
+    if platform.system() == 'Windows':
+        print(prefix,message)
+    else:
+        print(f"{color}{prefix}{Color.RESET}", message)
 
 # Initialize tesseract API once and reuse
 api = tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_WORD, lang='train', path=tesserocr.tesseract_cmd)
@@ -93,7 +105,7 @@ def recognize_roi(screenshot, roi):
 def main():
     try:
         input("- Press enter after you've hit your first shot. -")
-        sock = create_socket_connection(HOST, PORT)
+
         ball_speed_last = total_spin_last = spin_axis_last = hla_last = vla_last = club_speed = None
         shot_count = 0
         screenshot_attempts = 0
@@ -109,9 +121,16 @@ def main():
         print_colored_prefix(Color.GREEN, "GSPro ||", "Connecting to OpenConnect API ({}:{})...".format(HOST, PORT))
 
         # Run capture_window function in a separate thread
-        future_screenshot = executor.submit(capture_window, WINDOW_NAME, TARGET_WIDTH, TARGET_HEIGHT)
-        screenshot = future_screenshot.result()
-
+        if test_mode != TestModes.auto_shot:
+            while True :
+                try:
+                    future_screenshot = executor.submit(capture_window, WINDOW_NAME, TARGET_WIDTH, TARGET_HEIGHT)
+                    screenshot = future_screenshot.result()
+                    break
+                except Exception as e:
+                    print(f"{e}. Retrying")
+                time.sleep(1)
+        
         values = ["Ball Speed", "Spin Rate", "Spin Axis", "Launch Direction (HLA)", "Launch Angle (VLA)", "Club Speed"]
 
         # Ask user to select ROIs for each value, if they weren't found in the json
@@ -128,14 +147,25 @@ def main():
                 i=i+1
             print()
 
+        create_socket = True
         while True:
             # Run capture_window function in a separate thread
-            future_screenshot = executor.submit(capture_window, WINDOW_NAME, TARGET_WIDTH, TARGET_HEIGHT)
-            screenshot = future_screenshot.result()
+            if test_mode != TestModes.auto_shot:
+                while True :
+                    try:
+                        future_screenshot = executor.submit(capture_window, WINDOW_NAME, TARGET_WIDTH, TARGET_HEIGHT)
+                        screenshot = future_screenshot.result()
+                        break
+                    except Exception as e:
+                        print(f"{e}. Retrying")
+                    time.sleep(1)
 
-            result = []
-            for roi in rois:
-                result.append(recognize_roi(screenshot, roi))
+                result = []
+                for roi in rois:
+                    result.append(recognize_roi(screenshot, roi))
+            else:
+                result = [100, random.randint(1000,2000), 0,0,10,80] # fake shot data
+                time.sleep(2)
 
             ball_speed, total_spin, spin_axis, hla, vla, club_speed = map(str, result)
 
@@ -156,11 +186,11 @@ def main():
                 incomplete_data_displayed = False
                 error_occurred = False  # Reset the flag when valid data is obtained
                 shot_ready = True
-
             except ValueError:
                 if not incomplete_data_displayed:
                     screenshot_attempts += 1
-                    print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Invalid or incomplete data detected, retaking screenshot...")
+                    print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Invalid or incomplete data detected:")
+                    print_colored_prefix(Color.RED,"MLM2PRO Connector ||", f"* Ball Speed: {ball_speed} MPH, Total Spin: {total_spin} RPM, Spin Axis: {spin_axis}°, HLA: {hla}°, VLA: {vla}°, Club Speed: {club_speed} MPH")
                     incomplete_data_displayed = True
                 error_occurred = True  # Set the flag when an error occurs
                 shot_ready = False
@@ -207,12 +237,20 @@ def main():
                         "IsHeartBeat": False
                     }
                 }
-                try:
-                    sock.sendall(json.dumps(message).encode())
-                    print_colored_prefix(Color.BLUE, "MLM2PRO Connector ||", "Shot data has been sent successfully...")
-                except Exception as e:
-                    print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Failed to send shot data: {}".format(e))
-
+                while True:
+                    try:
+                        if create_socket:
+                            sock = create_socket_connection(HOST, PORT)
+                        sock.sendall(json.dumps(message).encode())
+                        data = sock.recv(1024) # Note, this is blocking
+                        if len(data) > 0 :
+                            print_colored_prefix(Color.BLUE, "MLM2PRO Connector ||", "Shot data has been sent successfully...")
+                            create_socket = False
+                            break
+                    except Exception:
+                        print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "No response from GSPRO. Retrying")
+                        create_socket = True
+                    time.sleep(1)
 
                 ball_speed_last = ball_speed
                 total_spin_last = total_spin
@@ -222,9 +260,11 @@ def main():
                 club_speed_last = club_speed
 
             time.sleep(1)
+
     except Exception as e:
         print_colored_prefix(Color.RED, "MLM2PRO Connector ||","An error occurred: {}".format(e))
-
+    except KeyboardInterrupt:
+        print("Ctrl-C pressed")
     finally:
         if api is not None:
             api.End()
@@ -232,6 +272,7 @@ def main():
         if 'sock' in locals():
             sock.close()
             print_colored_prefix(Color.RED, "GSPro ||", "Socket connection closed...")
+        sys.exit()
 
 if __name__ == "__main__":
     plt.ion()  # Turn interactive mode on.
