@@ -32,7 +32,16 @@ ctypes.cdll.LoadLibrary(tesseract_library)
 
 # Loading settings
 def load_settings():
-    with open(os.path.join(os.getcwd(), 'settings.json'), "r") as file:
+    fname = "settings.json"
+    if len(sys.argv) > 1 :
+        fname = sys.argv[1]
+        if os.path.exists(fname):    
+            print(f"Using settings from: {fname}")
+        else:
+            print(f"Can't locate specified settings file: {sys.argv[1]}")
+            sys.exit(1)
+            
+    with open(os.path.join(os.getcwd(), fname), "r") as file:
         lines = file.readlines()
         cleaned_lines = [line.split("//")[0].strip() for line in lines if not line.strip().startswith("//")]
         cleaned_json = "\n".join(cleaned_lines)
