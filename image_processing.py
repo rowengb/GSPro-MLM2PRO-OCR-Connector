@@ -73,8 +73,10 @@ def process_screenshot(screenshot, api, rois):
         raw_value = api.GetUTF8Text()
 
         # Ignore non-numeric characters
-        cleaned_value = ''.join(c for c in raw_value if c.isdigit() or c == '.' or c == '-' or c == '_')
-        value = cleaned_value if cleaned_value else '0'
+        cleaned_value = ''.join(c for c in raw_value if c.isdigit() or c == '.' or c == '-')
+
+        # strip any trailing periods, which can sometimes come from degree symbols
+        value = cleaned_value.strip('.') if cleaned_value else '0'
 
         result[name] = value
 
