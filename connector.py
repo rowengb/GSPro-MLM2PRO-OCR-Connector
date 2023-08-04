@@ -14,12 +14,14 @@ import cv2
 from matplotlib import pyplot as plt
 import platform
 import random
+import math
 
 class TestModes :
     none = 0
     auto_shot = 1 # allows debugging without having to hit shots
     
 test_mode = TestModes.none
+#test_mode = TestModes.auto_shot
 
 # Set the path to the Tesseract OCR executable and library
 tesseract_path = os.path.join(os.getcwd(), 'Tesseract-OCR')
@@ -32,7 +34,16 @@ ctypes.cdll.LoadLibrary(tesseract_library)
 
 # Loading settings
 def load_settings():
-    with open(os.path.join(os.getcwd(), 'settings.json'), "r") as file:
+    fname = "settings.json"
+    if len(sys.argv) > 1 :
+        fname = sys.argv[1]
+        if os.path.exists(fname):    
+            print(f"Using settings from: {fname}")
+        else:
+            print(f"Can't locate specified settings file: {sys.argv[1]}")
+            sys.exit(1)
+            
+    with open(os.path.join(os.getcwd(), fname), "r") as file:
         lines = file.readlines()
         cleaned_lines = [line.split("//")[0].strip() for line in lines if not line.strip().startswith("//")]
         cleaned_json = "\n".join(cleaned_lines)
@@ -164,7 +175,7 @@ def main():
                 for roi in rois:
                     result.append(recognize_roi(screenshot, roi))
             else:
-                result = [100, random.randint(1000,2000), 0,0,10,80] # fake shot data
+                result = [100, random.randint(1000,2000), random.randint(-10,10),0,10,80] # fake shot data
                 time.sleep(2)
 
             ball_speed, total_spin, spin_axis, hla, vla, club_speed = map(str, result)
@@ -184,7 +195,6 @@ def main():
                     raise ValueError("A value is 0")
 
                 incomplete_data_displayed = False
-                error_occurred = False  # Reset the flag when valid data is obtained
                 shot_ready = True
             except ValueError:
                 if not incomplete_data_displayed:
@@ -192,17 +202,15 @@ def main():
                     print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Invalid or incomplete data detected:")
                     print_colored_prefix(Color.RED,"MLM2PRO Connector ||", f"* Ball Speed: {ball_speed} MPH, Total Spin: {total_spin} RPM, Spin Axis: {spin_axis}°, HLA: {hla}°, VLA: {vla}°, Club Speed: {club_speed} MPH")
                     incomplete_data_displayed = True
-                error_occurred = True  # Set the flag when an error occurs
                 shot_ready = False
                 continue
 
             # check if values are the same as previous
             if shot_ready and (ball_speed == ball_speed_last and total_spin == total_spin_last and
                 spin_axis == spin_axis_last and hla == hla_last and vla == vla_last and club_speed == club_speed_last):
-                if not ready_message_displayed or error_occurred:  # Include the error_occurred flag here
+                if not ready_message_displayed:
                     print_colored_prefix(Color.BLUE, "MLM2PRO Connector ||", "System ready, take a shot...")
                     ready_message_displayed = True
-                    error_occurred = False  # Reset the flag after the message is printed
                 time.sleep(1)
                 continue
 
@@ -223,6 +231,8 @@ def main():
                         "Speed": float(ball_speed),
                         "SpinAxis": float(spin_axis),
                         "TotalSpin": float(total_spin),
+                        "BackSpin": round(total_spin * math.cos(math.radians(spin_axis))),
+                        "SideSpin": round(total_spin * math.sin(math.radians(spin_axis))),
                         "HLA": float(hla),
                         "VLA": float(vla)
                     },
