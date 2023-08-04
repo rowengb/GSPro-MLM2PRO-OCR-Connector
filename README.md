@@ -4,8 +4,12 @@ A Python app that interfaces the Rapsodo MLM2PRO golf launch monitor with the GS
 Required:
 
 1. Screen Mirroring App
-  - iOS/iPhone - AirPlay app from Windows Store - https://www.microsoft.com/store/productId/9P6QSQ5PH9KR
-  - Android - EasyCast app from Windows Store - https://www.microsoft.com/store/productId/9P8BH9SMXQMC (also requires Android app installation)
+  - iPhone/iPad one of:
+		- AirPlay app from Windows Store - https://www.microsoft.com/store/productId/9P6QSQ5PH9KR
+        - 5KPlayer - https://www.5kplayer.com/
+  - Android one of:
+        - scrcpy - 'Screen Copy' via USB - https://github.com/Genymobile/scrcpy (also requires enabling of USB debugging mode in Developer options.  See https://developer.android.com/studio/debug/dev-options)
+		- EasyCast app from Windows Store - https://www.microsoft.com/store/productId/9P8BH9SMXQMC (also requires Android app installation)
 
 2. Rapsodo MLM2PRO App
   - iPhone/iPad - https://apps.apple.com/us/app/rapsodo-mlm2pro/id1659665092
@@ -13,6 +17,9 @@ Required:
 
 3. Golf Balls
 - Callaway® RPT™ Chrome Soft X® Golf Balls (3 Included in MLM2PRO box), these are necessary to accurately calculate Spin Axis and Spin Rate - https://rapsodo.com/products/callaway-rpt-chrome-soft-x-golf-balls
+- or any other ball with dot stickers from 
+	- justapotamus - https://justapotamusdesigns.com/collections/rapsodo-mlm2pro-ball-dots
+	- rapsodoballdots - https://rapsodoballdots.com/
 
 Steps:
 
@@ -20,7 +27,8 @@ Steps:
 2. By default, the WINDOW_NAME is set to "AirPlay" (for iOS), if you are using Android, change it to "EasyCast". Depending on if you're using an iPhone/iPad, also update the TARGET_HEIGHT and TARGET_WIDTH accordingly. Once done, save the file (Ctrl+S) and close it.
 3. Open the Rapsodo MLM2PRO app, connect your Launch Monitor, and go to Simulation > Rapsodo Range.
 4. If using a phone, click on the little arrow next to "Ball Speed" on the right to show all the metrics.
-5. Mirror your phone/iPad screen to the AirPlay/EasyCast windows app (Depending on your OS).
+5. Mirror your device screen using
+- AirPlay or 5KScreen, if IOS) or EasyCast windows app (Depending on your OS), or scrcpy via USB debugging mode
 6. Adjust the AirPlay/EasyCast window size so that the Rapsodo MLM2Pro App fills it out with little to no black borders/bars (Doesn't have to be perfect, the connector app will still work with black borders/bars but may not be as accurate) - (Example: https://ibb.co/DMHx12S).
 7. Minimize the AirPlay/EasyCast application window (Important!).
 8. Open GSPRO and GSPRO Connect Open API window (Go to Range or Local Match to test).
