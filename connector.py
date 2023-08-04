@@ -6,7 +6,7 @@ import json
 import tesserocr
 from tesserocr import PyTessBaseAPI
 import ctypes
-from image_processing import capture_window, process_screenshot
+from image_processing import capture_window
 from socket_connection import create_socket_connection
 from PIL import Image
 from datetime import datetime
@@ -15,6 +15,14 @@ from matplotlib import pyplot as plt
 import platform
 import random
 import math
+import re
+
+from pygame import mixer
+mixer.init()
+
+class Sounds:
+    all_dashes=mixer.Sound("deedoo.wav") # Rapsodo range shows all dashes for a 'no-read'
+    bad_capture=mixer.Sound("3tone.wav") # One or more data fields was interpreted incorrectly
 
 class TestModes :
     none = 0
@@ -85,10 +93,7 @@ class Color:
     BLUE = '\033[94m'
 
 def print_colored_prefix(color, prefix, message):
-    if platform.system() == 'Windows':
-        print(prefix,message)
-    else:
-        print(f"{color}{prefix}{Color.RESET}", message)
+    print(f"{color}{prefix}{Color.RESET}", message)
 
 # Initialize tesseract API once and reuse
 api = tesserocr.PyTessBaseAPI(psm=tesserocr.PSM.SINGLE_WORD, lang='train', path=tesserocr.tesseract_cmd)
@@ -109,8 +114,14 @@ def recognize_roi(screenshot, roi):
     # use tesseract to recognize the text
     api.SetImage(Image.fromarray(cropped_img))
     result = api.GetUTF8Text()
-    cleaned_result = ''.join(c for c in result if c.isdigit() or c == '.' or c == '-' or c == '_' or c == '~')
-    return cleaned_result.strip()
+
+    # strip any trailing periods, and keep only one decimal place
+    cleaned_result = re.findall(r"[-]?(?:\d*\.*\d)", result)
+
+    if len(cleaned_result) == 0:
+        return '-' # didn't find a valid number
+    else :
+        return cleaned_result[0]
 
 
 def main():
@@ -182,6 +193,11 @@ def main():
 
             # Check if any values are incomplete/incorrect            
             try:
+                sound_to_play = Sounds.bad_capture # default error sound
+                if ball_speed == '-' and total_spin == '-' and spin_axis == '-' and hla == '-' and vla == '-' and club_speed == '-':
+                    sound_to_play = Sounds.all_dashes
+                    raise ValueError
+
                 # Convert strings to floats
                 ball_speed = float(ball_speed)
                 total_spin = float(total_spin)
@@ -199,6 +215,7 @@ def main():
             except ValueError:
                 if not incomplete_data_displayed:
                     screenshot_attempts += 1
+                    sound_to_play.play()
                     print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Invalid or incomplete data detected:")
                     print_colored_prefix(Color.RED,"MLM2PRO Connector ||", f"* Ball Speed: {ball_speed} MPH, Total Spin: {total_spin} RPM, Spin Axis: {spin_axis}°, HLA: {hla}°, VLA: {vla}°, Club Speed: {club_speed} MPH")
                     incomplete_data_displayed = True
