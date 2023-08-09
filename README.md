@@ -22,7 +22,7 @@ Required:
 
 Steps:
 
-1. Download the ZIP from v2.0, unzip it, and open the Settings.json file (https://github.com/rowengb/GSPro-MLM2PRO-OCR/releases/tag/v2.0).
+1. Download the ZIP from v2.1, unzip it, and open the Settings.json file (https://github.com/rowengb/GSPro-MLM2PRO-OCR/releases/tag/v2.1).
 2. By default, the WINDOW_NAME is set to "AirPlay" (for iOS).  If you are using 5KPlayer, you may need to change your device name to remove the apostrophe.  If you are using Android, change it to the name of the SCRCPY window (your device name). Also update the TARGET_HEIGHT and TARGET_WIDTH accordingly. Once done, save the file (Ctrl+S) and close it.
 3. Open the Rapsodo MLM2PRO app, connect your Launch Monitor, and go to Simulation > Rapsodo Range.
 4. If using a phone, click on the little arrow next to "Ball Speed" on the right to show all the metrics.
