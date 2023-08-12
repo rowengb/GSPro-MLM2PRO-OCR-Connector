@@ -14,5 +14,7 @@
   "ROI5" : " 126 , 464 , 107 , 56 ", // Launch Angle (HLA)
   "ROI6" : " 304 , 371 , 87 , 54 ",  // Club Speed
 
+ // "DISABLE_PUTTING" : 1,	// uncomment this and set to 1 to prevent Putting server from running
+  
   "METRIC": "Yards" // (Leave as is) - If you want metric instead of imperial, change it in GSPro itself
 }
