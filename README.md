@@ -21,6 +21,7 @@ Required:
 	- rapsodoballdots - https://rapsodoballdots.com/
 
 Optional:
+
 4. Putting
 - This connector will interface with the utility found here, which was created for the R10 https://github.com/alleexx/cam-putting-py/releases
 - See the readme at the above location for setup details
