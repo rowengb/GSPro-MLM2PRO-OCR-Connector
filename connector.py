@@ -16,6 +16,67 @@ import platform
 import random
 import math
 import re
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+import threading
+from queue import Queue
+import select
+
+shot_q = Queue()
+putter_in_use = False
+
+class Handler(BaseHTTPRequestHandler):
+    
+    def do_POST(self):
+        length = int(self.headers.get('content-length'))
+        if length > 0 and putter_in_use:
+            response_code = 200
+            message = '{"result" : "OK"}'
+            res = json.loads(self.rfile.read(length))
+            #print(res)
+
+            putt = {
+                "DeviceID": "Rapsodo MLM2PRO",
+                "Units": METRIC,
+                "ShotNumber": 99,
+                "APIversion": "1",
+                "ShotDataOptions": {
+                    "ContainsBallData": True,
+                    "ContainsClubData": True,
+                    "LaunchMonitorIsReady": True,
+                    "LaunchMonitorBallDetected": True,
+                    "IsHeartBeat": False
+                }
+            }
+            putt['BallData'] = {}
+            putt['BallData']['Speed'] = float(res['ballData']['BallSpeed'])
+            putt['BallData']['TotalSpin'] = float(res['ballData']['TotalSpin'])
+            putt['BallData']['SpinAxis'] = 0
+            putt['BallData']['HLA'] = float(res['ballData']['LaunchDirection'])
+            putt['BallData']['VLA'] = 0
+            putt['ClubData'] = {}
+            putt['ClubData']['Speed'] = float(res['ballData']['BallSpeed'])
+            shot_q.put(putt)
+
+        else:
+            if not putter_in_use:
+                print("Ignored sporadic putter shot")
+            response_code = 500
+            message = '{"result" : "ERROR"}'
+        self.send_response_only(response_code) # how to quiet this console message?
+        self.end_headers()
+        #print(json.loads(message))
+        self.wfile.write(str.encode(message))
+
+
+class MyServer(threading.Thread):
+    def run(self):
+        self.server = ThreadingHTTPServer(('0.0.0.0', 8888), Handler)
+        print("starting httpserver")
+        self.server.serve_forever()
+        print("stopped")
+    def stop(self):
+        print("stopping httpserver... ", end='')
+        self.server.shutdown()
 
 from pygame import mixer
 mixer.init()
@@ -123,13 +184,85 @@ def recognize_roi(screenshot, roi):
     else :
         return cleaned_result[0]
 
+def send_shots():
+    global putter_in_use
+    try:
+        if send_shots.create_socket:
+            send_shots.sock = create_socket_connection(HOST, PORT)
+            send_shots.create_socket = False
+
+        # Check if we recevied any unsollicited messages from GSPRO (e.g. change of club)
+        read_ready, _, _ = select.select([send_shots.sock], [], [], .1)
+        while read_ready:
+            data = send_shots.sock.recv(1024)
+            #print(data)
+            jsons = re.split('(\{.*?\})(?= *\{)', data.decode("utf-8"))
+            for this_json in jsons:
+                if len(this_json) > 0 :
+                    msg = json.loads(this_json)
+                    if msg['Code'] == 201 :
+                        #print(msg)
+                        if msg['Player']['Club'] == "PT" and not putter_in_use:
+                            print("Putting mode")
+                            putter_in_use = True
+                        else:
+                            if msg['Player']['Club'] != "PT":
+                                print(f"Club is {msg['Player']['Club']}")
+                                putter_in_use = False
+                            
+            read_ready, _, _ = select.select([send_shots.sock], [], [], .1)
+        # Check if we have a shot to send.  If not, we can return
+        try:
+            message = shot_q.get_nowait()
+        except:
+            # No shot to send
+            return
+        
+        message['ShotNumber'] = send_shots.shot_count
+        send_shots.sock.sendall(json.dumps(message).encode())
+        ball_speed = message['BallData']['Speed']
+        total_spin = message['BallData']['TotalSpin']
+        spin_axis = message['BallData']['SpinAxis']
+        hla= message['BallData']['HLA']
+        vla= message['BallData']['VLA']
+        club_speed= message['ClubData']['Speed']
+         
+        print_colored_prefix(Color.GREEN,"MLM2PRO Connector ||", f"Shot {send_shots.shot_count} - Ball Speed: {ball_speed} MPH, Total Spin: {total_spin} RPM, Spin Axis: {spin_axis}°, HLA: {hla}°, VLA: {vla}°, Club Speed: {club_speed} MPH")
+        send_shots.shot_count += 1
+
+        # Poll politely until there is a message received on the socket
+        #print(message)
+        read_ready = False
+        while not read_ready:
+            read_ready, _, _ = select.select([send_shots.sock], [], [], .5)
+                
+        # Here we know the response is due to the shot we sent
+        data = send_shots.sock.recv(1024) # Note, we know there's a response now
+        #print(data)
+        if len(data) > 0 and json.loads(data)['Code'] == 200:
+            print_colored_prefix(Color.BLUE, "MLM2PRO Connector ||", "Shot data has been sent successfully...")
+            send_shots.gspro_connection_notified = False;
+            send_shots.create_socket = False
+
+    except Exception as e:
+        print(e)
+        print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "No response from GSPRO. Retrying")
+        if not send_shots.gspro_connection_notified:
+            Sounds.all_dashes.play()
+            send_shots.gspro_connection_notified = True;
+        send_shots.create_socket = True
+
+    return
+# Initialize function 'send_shots' static varibles
+send_shots.gspro_connection_notified = False
+send_shots.shot_count = 1
+send_shots.create_socket = True
 
 def main():
     try:
         input("- Press enter after you've hit your first shot. -")
 
         ball_speed_last = total_spin_last = spin_axis_last = hla_last = vla_last = club_speed = None
-        shot_count = 0
         screenshot_attempts = 0
         incomplete_data_displayed = False
         ready_message_displayed = False
@@ -169,8 +302,14 @@ def main():
                 i=i+1
             print()
 
-        create_socket = True
-        while True:
+        #create_socket = True
+        last_auto_time = 0
+        graceful_shut = False
+        while not graceful_shut:
+
+            # send any pending shots from the queue.  Will block while awaiting response
+            send_shots()
+            
             # Run capture_window function in a separate thread
             if test_mode != TestModes.auto_shot:
                 while True :
@@ -186,8 +325,10 @@ def main():
                 for roi in rois:
                     result.append(recognize_roi(screenshot, roi))
             else:
-                result = [100, random.randint(1000,2000), random.randint(-10,10),0,10,80] # fake shot data
-                time.sleep(2)
+                if time.time() - last_auto_time > 6:
+                    result = [random.randint(30,100), random.randint(1000,2000), random.randint(-10,10),0,10,80] # fake shot data
+                    last_auto_time = time.time()
+                #time.sleep(6)
 
             ball_speed, total_spin, spin_axis, hla, vla, club_speed = map(str, result)
 
@@ -233,16 +374,16 @@ def main():
 
             if (ball_speed != ball_speed_last or total_spin != total_spin_last or
                     spin_axis != spin_axis_last or hla != hla_last or vla != vla_last or club_speed != club_speed_last):
-                shot_count += 1
+                #shot_count += 1
                 screenshot_attempts = 0  # Reset the attempt count when valid data is obtained
                 ready_message_displayed = False  # Reset the flag when data changes
 
-                print_colored_prefix(Color.GREEN,"MLM2PRO Connector ||", f"Shot {shot_count} - Ball Speed: {ball_speed} MPH, Total Spin: {total_spin} RPM, Spin Axis: {spin_axis}°, HLA: {hla}°, VLA: {vla}°, Club Speed: {club_speed} MPH")
+                #print_colored_prefix(Color.GREEN,"MLM2PRO Connector ||", f"Shot {send_shots.shot_count} - Ball Speed: {ball_speed} MPH, Total Spin: {total_spin} RPM, Spin Axis: {spin_axis}°, HLA: {hla}°, VLA: {vla}°, Club Speed: {club_speed} MPH")
 
                 message = {
                     "DeviceID": "Rapsodo MLM2PRO",
                     "Units": METRIC,
-                    "ShotNumber": shot_count,
+                    "ShotNumber": 999,
                     "APIversion": "1",
                     "BallData": {
                         "Speed": float(ball_speed),
@@ -264,20 +405,7 @@ def main():
                         "IsHeartBeat": False
                     }
                 }
-                while True:
-                    try:
-                        if create_socket:
-                            sock = create_socket_connection(HOST, PORT)
-                        sock.sendall(json.dumps(message).encode())
-                        data = sock.recv(1024) # Note, this is blocking
-                        if len(data) > 0 :
-                            print_colored_prefix(Color.BLUE, "MLM2PRO Connector ||", "Shot data has been sent successfully...")
-                            create_socket = False
-                            break
-                    except Exception:
-                        print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "No response from GSPRO. Retrying")
-                        create_socket = True
-                    time.sleep(1)
+                shot_q.put(message)
 
                 ball_speed_last = ball_speed
                 total_spin_last = total_spin
@@ -285,22 +413,28 @@ def main():
                 hla_last = hla
                 vla_last = vla
                 club_speed_last = club_speed
-
             time.sleep(1)
 
     except Exception as e:
         print_colored_prefix(Color.RED, "MLM2PRO Connector ||","An error occurred: {}".format(e))
     except KeyboardInterrupt:
         print("Ctrl-C pressed")
+        graceful_shut = True
     finally:
         if api is not None:
             api.End()
             print_colored_prefix(Color.RED, "MLM2PRO Connector ||", "Tesseract API ended...")
-        if 'sock' in locals():
-            sock.close()
-            print_colored_prefix(Color.RED, "GSPro ||", "Socket connection closed...")
+        # Believe it or not, if you close this socket, it will hang the GSPConnect.exe
+        # and hog the CPU.
+        # Leaving this open allows this connector to be repeatedly relaunched.  Weird
+        #send_shots.sock.close()
+        #print_colored_prefix(Color.RED, "GSPro ||", "Socket connection closed...")
+        s.stop()
         sys.exit()
 
 if __name__ == "__main__":
+    s = MyServer()
+    s.start()
+    time.sleep(1)
     plt.ion()  # Turn interactive mode on.
     main()
